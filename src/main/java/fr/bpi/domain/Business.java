@@ -1,4 +1,4 @@
-package fr.bpi.versionOneModel.domain;
+package fr.bpi.domain;
 
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;

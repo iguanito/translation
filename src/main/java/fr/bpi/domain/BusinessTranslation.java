@@ -1,10 +1,11 @@
-package fr.bpi.versionOneModel.domain;
+package fr.bpi.domain;
 
 import java.util.Locale;
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
 import javax.persistence.Id;
+import javax.persistence.JoinColumn;
 import javax.persistence.ManyToOne;
 import javax.persistence.Table;
 
@@ -24,12 +25,14 @@ public class BusinessTranslation {
     private String valueProposition;
 
     @ManyToOne
+    @JoinColumn(name="catalog_business_id", nullable=false, updatable=false)
     private Business business;
 
     public BusinessTranslation() {
     }
 
-    public BusinessTranslation(Locale locale, String description, String valueProposition) {
+    public BusinessTranslation(Business createdBusiness, Locale locale, String description, String valueProposition) {
+        this.business = createdBusiness;
         this.locale = locale;
         this.description = description;
         this.valueProposition = valueProposition;
@@ -65,5 +68,13 @@ public class BusinessTranslation {
 
     public void setId(Integer id) {
         this.id = id;
+    }
+
+    public Business getBusiness() {
+        return business;
+    }
+
+    public void setBusiness(Business business) {
+        this.business = business;
     }
 }

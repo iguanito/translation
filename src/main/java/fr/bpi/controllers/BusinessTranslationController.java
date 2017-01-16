@@ -1,4 +1,4 @@
-package fr.bpi.versionOneModel.controller;
+package fr.bpi.controllers;
 
 import java.net.URI;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -8,11 +8,11 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
-import fr.bpi.versionOneModel.domain.BusinessTranslation;
-import fr.bpi.versionOneModel.repositories.BusinessTranslationRepository;
+import fr.bpi.domain.BusinessTranslation;
+import fr.bpi.repositories.BusinessTranslationRepository;
 
-@RestController
-@RequestMapping("/version1/businesses_translation")
+@RestController()
+@RequestMapping("/translations")
 public class BusinessTranslationController {
 
     @Autowired
