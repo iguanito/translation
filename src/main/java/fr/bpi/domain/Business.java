@@ -27,19 +27,8 @@ public class Business implements TranslatableEntity {
     private String valueProposition;
     private String description;
 
-    //should be same of column name
-    private final transient String valuepropositionkey = "value_proposition";
+    //should be same as column name
+    private final transient String valuePropositionkey = "value_proposition";
     private final transient String descriptionKey = "description";
-
-    @Override
-        public String getTranslationTableName() {
-        return this.getClass().getAnnotation(Table.class).name() + TRANSLATION_TABLE_EXTENSION;
-    }
-
-    @Override
-    public String getTranslationTableReferringField() {
-        return this.getClass().getAnnotation(Table.class).name() + REFERING_ID_EXTENSION;
-    }
-
 
 }

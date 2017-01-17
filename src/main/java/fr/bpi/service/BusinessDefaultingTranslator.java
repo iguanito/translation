@@ -32,7 +32,7 @@ public class BusinessDefaultingTranslator {
             String translatedDescription = databaseMessageSource.getMessage(prefix + delimiter + business.getDescriptionKey(),
                                                                             null,
                                                                             locale);
-            String translatedValue = databaseMessageSource.getMessage(prefix + delimiter + business.getValuepropositionkey()
+            String translatedValue = databaseMessageSource.getMessage(prefix + delimiter + business.getValuePropositionkey()
                                                                             .toString(),
                                                                       null,
                                                                       locale);
