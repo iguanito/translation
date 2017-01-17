@@ -1,9 +1,9 @@
 package fr.bpi;
 
+import static java.util.Locale.ENGLISH;
 import static org.assertj.core.api.Assertions.assertThat;
 import java.net.URI;
 import java.util.Locale;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -13,8 +13,8 @@ import org.springframework.boot.test.web.client.TestRestTemplate;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.test.context.junit4.SpringRunner;
-import fr.bpi.domain.Business;
-import fr.bpi.domain.BusinessTranslation;
+import fr.bpi.model.BusinessModel;
+import fr.bpi.model.BusinessTranslationModel;
 
 @RunWith(SpringRunner.class)
 @SpringBootTest(webEnvironment = WebEnvironment.RANDOM_PORT)
@@ -28,12 +28,15 @@ public class BusinessControllerTest {
     @Test
     public void should_create_business_with_default() throws Exception {
         //Given
-        Business business = new Business("description", "proposition de valeur");
-        business.setDomain("un domaine");
+        BusinessModel businessModel = BusinessModel.builder()
+                                                   .domain("un domaine")
+                                                   .description("description")
+                                                   .valueProposition("proposition de valeur")
+                                                   .locale(Locale.FRENCH).build();
 
         //When
-        URI uri = restTemplate.postForLocation(businessUrl, business);
-        Business createdBusiness = restTemplate.getForObject(uri, Business.class);
+        URI uri = restTemplate.postForLocation(businessUrl, businessModel);
+        BusinessModel createdBusiness = restTemplate.getForObject(uri, BusinessModel.class);
 
         //Then
         assertThat(createdBusiness.getDomain()).isEqualTo("un domaine");
@@ -43,13 +46,16 @@ public class BusinessControllerTest {
 
     @Test
     //do we?
-    public void should_update_default_value() {
+    public void should_NOT_update_default_value() {
         //Given
-        Business business = new Business("description", "proposition de valeur");
-        business.setDomain("un domaine");
+        BusinessModel businessModel = BusinessModel.builder()
+                                                   .domain("un domaine")
+                                                   .description("description")
+                                                   .valueProposition("proposition de valeur")
+                                                   .locale(Locale.FRENCH).build();
 
-        URI uri = restTemplate.postForLocation(businessUrl, business);
-        Business createdBusiness = restTemplate.getForObject(uri, Business.class);
+        URI uri = restTemplate.postForLocation(businessUrl, businessModel);
+        BusinessModel createdBusiness = restTemplate.getForObject(uri, BusinessModel.class);
 
         createdBusiness.setValueProposition("la nouvelle proposition de valeur");
 
@@ -57,85 +63,69 @@ public class BusinessControllerTest {
         restTemplate.put(uri, createdBusiness);
 
         //Then
-        Business updatedBusiness = restTemplate.getForObject(uri, Business.class);
+        BusinessModel updatedBusiness = restTemplate.getForObject(uri, BusinessModel.class);
         assertThat(updatedBusiness.getDomain()).isEqualTo("un domaine");
-        assertThat(createdBusiness.getDescription()).isEqualTo("description");
-        assertThat(createdBusiness.getValueProposition()).isEqualTo("la nouvelle proposition de valeur");
+        assertThat(updatedBusiness.getDescription()).isEqualTo("description");
+        assertThat(updatedBusiness.getValueProposition()).isEqualTo("proposition de valeur");
     }
 
     @Test
     public void should_get_translated_business() {
         //Given
-        Business business = new Business("description", "proposition de valeur");
-        business.setDomain("un domaine");
+        BusinessModel businessModel = BusinessModel.builder()
+                                                   .domain("un domaine")
+                                                   .description("la description")
+                                                   .valueProposition("la proposition de valeur")
+                                                   .locale(Locale.FRENCH).build();
 
-        URI uri = restTemplate.postForLocation(businessUrl, business);
-        Business createdBusiness = restTemplate.getForObject(uri, Business.class);
+        URI uri = restTemplate.postForLocation(businessUrl, businessModel);
+        BusinessModel createdBusiness = restTemplate.getForObject(uri, BusinessModel.class);
 
-        BusinessTranslation translation = new BusinessTranslation(createdBusiness, Locale.ENGLISH,
-                                                                  "the description",
-                                                                  "the value proposition");
-        restTemplate.postForLocation(businessTranslationUrl, translation);
+        BusinessTranslationModel translation = BusinessTranslationModel.builder()
+                                                                       .locale(ENGLISH)
+                                                                       .description("a description")
+                                                                       .valueProposition("a value proposition")
+                                                                       .build();
+        restTemplate.postForLocation(businessUrl + "/" + createdBusiness.getId() + businessTranslationUrl, translation);
 
         //When
-        Business translatedBusiness = restTemplate.getForObject(uri.toString() + "?language=en", Business.class);
+        BusinessModel translatedBusiness = restTemplate.getForObject(uri.toString() + "?language=en", BusinessModel.class);
 
         //Then
         assertThat(translatedBusiness.getDomain()).isEqualTo("un domaine");
-        assertThat(translatedBusiness.getDescription()).isEqualTo("the description");
-        assertThat(translatedBusiness.getValueProposition()).isEqualTo("the value proposition");
+        assertThat(translatedBusiness.getDescription()).isEqualTo("a description");
+        assertThat(translatedBusiness.getValueProposition()).isEqualTo("a value proposition");
     }
 
     @Test
     public void should_not_accept_business_without_translation() {
         //Given
-        Business business = new Business();
+        BusinessModel business = new BusinessModel();
 
         //When
-        ResponseEntity<Business> businessResponseEntity = restTemplate.postForEntity(businessUrl,
+        ResponseEntity<BusinessModel> businessResponseEntity = restTemplate.postForEntity(businessUrl,
                                                                                      business,
-                                                                                     Business.class);
+                                                                                     BusinessModel.class);
         //Then
         assertThat(businessResponseEntity.getStatusCode()).isEqualTo(HttpStatus.INTERNAL_SERVER_ERROR);
     }
 
-    @Test
-    @Ignore
-    public void should_not_accept_business_with_several_translations_in_same_language() {
-        //Given
-        Business business = new Business();
-
-  /*      BusinessTranslation translation = new BusinessTranslation(Locale.FRENCH,
-                                                                  "description",
-                                                                  "proposition de valeur");
-        BusinessTranslation anotherTranslation = new BusinessTranslation(Locale.FRENCH,
-                                                                         "description",
-                                                                         "proposition de valeur");*/
-
-        //business.getTranslations().add(translation);
-        //business.getTranslations().add(anotherTranslation);
-
-        //When
-        ResponseEntity<Business> businessResponseEntity = restTemplate.postForEntity(businessUrl,
-                                                                                     business,
-                                                                                     Business.class);
-
-        //Then
-        assertThat(businessResponseEntity.getStatusCode()).isEqualTo(HttpStatus.INTERNAL_SERVER_ERROR);
-    }
 
     @Test
-    @Ignore
     public void should_delete_business() {
-        //Given
-/*        BusinessTranslation translation = new BusinessTranslation(Locale.FRENCH,
-                                                                  "description",
-                                                                  "proposition de valeur");*/
-        //Business business = new Business(translation);
-        //business.setDomain("un domaine");
+        BusinessModel businessModel = BusinessModel.builder()
+                                                   .domain("un domaine")
+                                                   .description("la description")
+                                                   .valueProposition("la proposition de valeur")
+                                                   .locale(Locale.FRENCH).build();
 
+        URI uri = restTemplate.postForLocation(businessUrl, businessModel);
 
-        //When
+        restTemplate.delete(uri);
+
+        ResponseEntity<BusinessModel> entity = restTemplate.getForEntity(uri, BusinessModel.class);
+
+        assertThat(entity.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
 
     }
 
