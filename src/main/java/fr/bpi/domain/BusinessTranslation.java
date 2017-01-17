@@ -5,8 +5,6 @@ import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
 import javax.persistence.Id;
-import javax.persistence.JoinColumn;
-import javax.persistence.ManyToOne;
 import javax.persistence.Table;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -16,33 +14,22 @@ import lombok.Setter;
 
 @Entity
 @Table(name = "catalog_business_translation")
+@Getter
+@Setter
 @AllArgsConstructor
 @NoArgsConstructor
 @Builder
-@Setter
-@Getter
 public class BusinessTranslation {
 
     @Id
     @GeneratedValue
     private Integer id;
-
-    @Column(name = "languageCode")
-    private Locale locale;
-
     private String description;
-
     private String valueProposition;
+    @Column(name = "language_code")
+    private Locale locale;
+    @Column(name = "catalog_business_id")
+    private Integer businessId;
 
-    //TBD
-    @ManyToOne
-    @JoinColumn(name="catalog_business_id", nullable=false, updatable=false)
-    private Business business;
 
-    @Column(name = "is_default")
-    private boolean isDefault;
-
-    public BusinessTranslation(Business business, Locale english, String description, String valueProposition) {
-
-    }
 }

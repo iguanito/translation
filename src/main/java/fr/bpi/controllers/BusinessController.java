@@ -5,7 +5,7 @@ import static org.springframework.web.bind.annotation.RequestMethod.GET;
 import static org.springframework.web.bind.annotation.RequestMethod.POST;
 import static org.springframework.web.bind.annotation.RequestMethod.PUT;
 import java.net.URI;
-import java.util.List;
+import java.util.Locale;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -17,28 +17,26 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 import fr.bpi.domain.Business;
 import fr.bpi.domain.BusinessTranslation;
-import fr.bpi.model.BusinessModel;
-import fr.bpi.model.BusinessTranslationModel;
 import fr.bpi.repositories.BusinessRepository;
 import fr.bpi.repositories.BusinessTranslationRepository;
 import fr.bpi.service.BusinessDefaultingTranslator;
-import fr.bpi.service.BusinessModelEntityTransformer;
 
 @RestController()
 @RequestMapping("/businesses")
 public class BusinessController {
 
-    @Autowired
-    private BusinessRepository businessRepository;
+    private final BusinessRepository businessRepository;
+
+    private final BusinessTranslationRepository businessTranslationRepository;
+
+    private final BusinessDefaultingTranslator businessTranslator;
 
     @Autowired
-    private BusinessTranslationRepository businessTranslationRepository;
-
-    @Autowired
-    private BusinessDefaultingTranslator businessTranslator;
-
-    @Autowired
-    private BusinessModelEntityTransformer transformer;
+    public BusinessController(BusinessTranslationRepository businessTranslationRepository, BusinessDefaultingTranslator businessTranslator, BusinessRepository businessRepository) {
+        this.businessTranslationRepository = businessTranslationRepository;
+        this.businessTranslator = businessTranslator;
+        this.businessRepository = businessRepository;
+    }
 
     @RequestMapping(method = GET)
     Iterable<Business> getBusinesses(){
@@ -53,29 +51,21 @@ public class BusinessController {
             return ResponseEntity.notFound().build();
         }
 
-        BusinessModel businessModel = businessTranslator.translate(business, language);
+        if (language == null) {
+            return ResponseEntity.ok(business);
+        } else {
+            return ResponseEntity.ok(businessTranslator.translate(business, new Locale(language)));
+        }
 
-        return ResponseEntity.ok(businessModel);
     }
 
     @RequestMapping(method = POST)
-    ResponseEntity<?> create(@RequestBody BusinessModel businessModel) {
-        //method should be in a transaction
-        Business savedBusiness = businessRepository.save(transformer.toEntity(businessModel));
-        //put in service?
-        //TODO TBD
-        if (businessModel.getLocale() == null) {
-            throw new RuntimeException("No language");
+    ResponseEntity<?> create(@RequestBody Business business) {
+        if (business.getDescription() == null || business.getValueProposition() == null) {
+            return ResponseEntity.badRequest().build();
         }
 
-        BusinessTranslation defaultTranslation = BusinessTranslation.builder()
-                                                                    .business(savedBusiness)
-                                                                    .isDefault(true)
-                                                                    .locale(businessModel.getLocale())
-                                                                    .description(businessModel.getDescription())
-                                                                    .valueProposition(businessModel.getValueProposition())
-                                                                    .build();
-        businessTranslationRepository.save(defaultTranslation);
+        Business savedBusiness = businessRepository.save(business);
 
         URI location = ServletUriComponentsBuilder
                 .fromCurrentRequest().path("/{id}")
@@ -85,7 +75,7 @@ public class BusinessController {
     }
 
     @RequestMapping(path = "/{id}", method = PUT)
-    ResponseEntity<?> update(@PathVariable("id") Integer businessId, @RequestBody BusinessModel updatedBusiness) {
+    ResponseEntity<?> update(@PathVariable("id") Integer businessId, @RequestBody Business updatedBusiness) {
         //no update of translation?
         Business savedBusiness = businessRepository.findOne(businessId);
         if (savedBusiness == null) {
@@ -96,30 +86,24 @@ public class BusinessController {
             return ResponseEntity.badRequest().build();
         }
 
-        businessRepository.save(transformer.toEntity(updatedBusiness));
-
         return ResponseEntity.ok().build();
     }
 
     @RequestMapping(path = "/{id}", method = DELETE)
     ResponseEntity<?> delete(@PathVariable("id") Integer businessId) {
-        //should be transactional
         Business savedBusiness = businessRepository.findOne(businessId);
 
         if (savedBusiness == null) {
             return ResponseEntity.notFound().build();
         }
 
-        List<BusinessTranslation> translations = businessTranslationRepository.findByBusiness(savedBusiness);
-
-        businessTranslationRepository.delete(translations);
         businessRepository.delete(savedBusiness);
 
         return ResponseEntity.noContent().build();
     }
 
     @RequestMapping(path = "/{id}/translations", method = RequestMethod.POST)
-    ResponseEntity<?> create(@PathVariable("id") Integer businessId, @RequestBody BusinessTranslationModel translation) {
+    ResponseEntity<?> create(@PathVariable("id") Integer businessId, @RequestBody BusinessTranslation translation) {
         Business savedBusiness = businessRepository.findOne(businessId);
         if (savedBusiness == null) {
             return ResponseEntity.notFound().build();
@@ -128,7 +112,7 @@ public class BusinessController {
         BusinessTranslation businessTranslation = BusinessTranslation.builder()
                                                                      .description(translation.getDescription())
                                                                      .valueProposition(translation.getValueProposition())
-                                                                     .business(savedBusiness)
+                                                                     .businessId(savedBusiness.getId())
                                                                      .locale(translation.getLocale())
                                                                      .build();
 
