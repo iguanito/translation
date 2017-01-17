@@ -8,9 +8,19 @@ import javax.persistence.Id;
 import javax.persistence.JoinColumn;
 import javax.persistence.ManyToOne;
 import javax.persistence.Table;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
 
 @Entity
 @Table(name = "catalog_business_translation")
+@AllArgsConstructor
+@NoArgsConstructor
+@Builder
+@Setter
+@Getter
 public class BusinessTranslation {
 
     @Id
@@ -24,57 +34,15 @@ public class BusinessTranslation {
 
     private String valueProposition;
 
+    //TBD
     @ManyToOne
     @JoinColumn(name="catalog_business_id", nullable=false, updatable=false)
     private Business business;
 
-    public BusinessTranslation() {
-    }
+    @Column(name = "is_default")
+    private boolean isDefault;
 
-    public BusinessTranslation(Business createdBusiness, Locale locale, String description, String valueProposition) {
-        this.business = createdBusiness;
-        this.locale = locale;
-        this.description = description;
-        this.valueProposition = valueProposition;
-    }
+    public BusinessTranslation(Business business, Locale english, String description, String valueProposition) {
 
-    public Integer getId() {
-        return id;
-    }
-
-    public Locale getLocale() {
-        return locale;
-    }
-
-    public void setLocale(Locale locale) {
-        this.locale = locale;
-    }
-
-    public String getDescription() {
-        return description;
-    }
-
-    public void setDescription(String description) {
-        this.description = description;
-    }
-
-    public String getValueProposition() {
-        return valueProposition;
-    }
-
-    public void setValueProposition(String valueProposition) {
-        this.valueProposition = valueProposition;
-    }
-
-    public void setId(Integer id) {
-        this.id = id;
-    }
-
-    public Business getBusiness() {
-        return business;
-    }
-
-    public void setBusiness(Business business) {
-        this.business = business;
     }
 }
