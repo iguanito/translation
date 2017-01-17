@@ -36,16 +36,12 @@ public class BusinessTranslation {
 
     private String valueProposition;
 
-    //TBD
-    @ManyToOne
-    @JoinColumn(name="catalog_business_id", nullable=false, updatable=false)
-    @Cascade(CascadeType.REMOVE)
-    private Business business;
+    public BusinessTranslation() {}
 
-    @Column(name = "is_default")
-    private boolean isDefault;
-
-    public BusinessTranslation(Business business, Locale english, String description, String valueProposition) {
-
+    public BusinessTranslation(Locale locale, String description, String valueProposition) {
+        this.locale = locale;
+        this.description = description;
+        this.valueProposition = valueProposition;
     }
+
 }
