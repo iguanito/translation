@@ -5,11 +5,7 @@ import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
 import javax.persistence.Id;
-import javax.persistence.JoinColumn;
-import javax.persistence.ManyToOne;
 import javax.persistence.Table;
-import org.hibernate.annotations.Cascade;
-import org.hibernate.annotations.CascadeType;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
@@ -36,12 +32,6 @@ public class BusinessTranslation {
 
     private String valueProposition;
 
-    public BusinessTranslation() {}
-
-    public BusinessTranslation(Locale locale, String description, String valueProposition) {
-        this.locale = locale;
-        this.description = description;
-        this.valueProposition = valueProposition;
-    }
+    private boolean isDefault;
 
 }

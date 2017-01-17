@@ -58,13 +58,14 @@ public class BusinessControllerTest {
         BusinessModel createdBusiness = restTemplate.getForObject(uri, BusinessModel.class);
 
         createdBusiness.setValueProposition("la nouvelle proposition de valeur");
+        createdBusiness.setDomain("un autre domaine");
 
         //When
         restTemplate.put(uri, createdBusiness);
 
         //Then
         BusinessModel updatedBusiness = restTemplate.getForObject(uri, BusinessModel.class);
-        assertThat(updatedBusiness.getDomain()).isEqualTo("un domaine");
+        assertThat(updatedBusiness.getDomain()).isEqualTo("un autre domaine");
         assertThat(updatedBusiness.getDescription()).isEqualTo("description");
         assertThat(updatedBusiness.getValueProposition()).isEqualTo("proposition de valeur");
     }
@@ -107,7 +108,7 @@ public class BusinessControllerTest {
                                                                                      business,
                                                                                      BusinessModel.class);
         //Then
-        assertThat(businessResponseEntity.getStatusCode()).isEqualTo(HttpStatus.INTERNAL_SERVER_ERROR);
+        assertThat(businessResponseEntity.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
     }
 
 

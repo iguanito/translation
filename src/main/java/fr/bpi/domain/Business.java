@@ -32,6 +32,7 @@ public class Business {
     private Integer id;
     private String domain;
 
+    //would we like to use a Map instead of a Set here?
     @OneToMany(cascade = CascadeType.ALL)
     @JoinColumn(name="catalog_business_id")
     private Set<BusinessTranslation> translations = new HashSet<>();
@@ -40,8 +41,14 @@ public class Business {
         this.translations.add(businessTranslation);
     }
 
-    public Optional<BusinessTranslation> getTranslation(Locale locale) {
-        return translations.stream().filter(t -> t.getLocale().getLanguage().equals(locale.getLanguage())).findFirst();
+    public BusinessTranslation getTranslation(Locale locale) {
+        return translations.stream().filter(t -> t.getLocale().getLanguage().equals(locale.getLanguage())).findFirst().orElse(this.getDefault());
+    }
+
+    public BusinessTranslation getDefault() {
+        Optional<BusinessTranslation> defaultTranslation = translations.stream().filter(BusinessTranslation::isDefault).findFirst();
+
+        return defaultTranslation.orElseThrow(() -> new IllegalStateException("no default language found"));
     }
 
 }

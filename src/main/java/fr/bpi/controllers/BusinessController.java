@@ -5,7 +5,10 @@ import static org.springframework.web.bind.annotation.RequestMethod.GET;
 import static org.springframework.web.bind.annotation.RequestMethod.POST;
 import static org.springframework.web.bind.annotation.RequestMethod.PUT;
 import java.net.URI;
-import java.util.List;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.Locale;
+import java.util.Set;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -20,8 +23,6 @@ import fr.bpi.domain.BusinessTranslation;
 import fr.bpi.model.BusinessModel;
 import fr.bpi.model.BusinessTranslationModel;
 import fr.bpi.repositories.BusinessRepository;
-import fr.bpi.repositories.BusinessTranslationRepository;
-import fr.bpi.service.BusinessDefaultingTranslator;
 import fr.bpi.service.BusinessModelEntityTransformer;
 
 @RestController()
@@ -30,12 +31,6 @@ public class BusinessController {
 
     @Autowired
     private BusinessRepository businessRepository;
-
-    @Autowired
-    private BusinessTranslationRepository businessTranslationRepository;
-
-    @Autowired
-    private BusinessDefaultingTranslator businessTranslator;
 
     @Autowired
     private BusinessModelEntityTransformer transformer;
@@ -53,29 +48,21 @@ public class BusinessController {
             return ResponseEntity.notFound().build();
         }
 
-        BusinessModel businessModel = businessTranslator.translate(business, language);
-
-        return ResponseEntity.ok(businessModel);
+        return language == null ? ResponseEntity.ok(transformer.toModelUsingDefaultLanguage(business)) :
+                                  ResponseEntity.ok(transformer.toModel(business, new Locale(language)));
     }
 
     @RequestMapping(method = POST)
     ResponseEntity<?> create(@RequestBody BusinessModel businessModel) {
-        //method should be in a transaction
-        Business savedBusiness = businessRepository.save(transformer.toEntity(businessModel));
-        //put in service?
-        //TODO TBD
-        if (businessModel.getLocale() == null) {
-            throw new RuntimeException("No language");
+        if (businessModel.getLocale() == null || businessModel.getLocale().getLanguage() == null) {
+            return ResponseEntity.badRequest().build();
         }
 
-        BusinessTranslation defaultTranslation = BusinessTranslation.builder()
-                                                                    .business(savedBusiness)
-                                                                    .isDefault(true)
-                                                                    .locale(businessModel.getLocale())
-                                                                    .description(businessModel.getDescription())
-                                                                    .valueProposition(businessModel.getValueProposition())
-                                                                    .build();
-        businessTranslationRepository.save(defaultTranslation);
+        BusinessTranslation translation = transformer.toDefaultTranslation(businessModel);
+
+
+        Business savedBusiness = businessRepository.save(transformer.toEntity(businessModel,
+                                                                              Collections.singleton(translation)));
 
         URI location = ServletUriComponentsBuilder
                 .fromCurrentRequest().path("/{id}")
@@ -86,7 +73,7 @@ public class BusinessController {
 
     @RequestMapping(path = "/{id}", method = PUT)
     ResponseEntity<?> update(@PathVariable("id") Integer businessId, @RequestBody BusinessModel updatedBusiness) {
-        //no update of translation?
+        //no update of default translation?
         Business savedBusiness = businessRepository.findOne(businessId);
         if (savedBusiness == null) {
             return ResponseEntity.notFound().build();
@@ -96,23 +83,21 @@ public class BusinessController {
             return ResponseEntity.badRequest().build();
         }
 
-        businessRepository.save(transformer.toEntity(updatedBusiness));
+        savedBusiness.setDomain(updatedBusiness.getDomain());
+
+        businessRepository.save(savedBusiness);
 
         return ResponseEntity.ok().build();
     }
 
     @RequestMapping(path = "/{id}", method = DELETE)
     ResponseEntity<?> delete(@PathVariable("id") Integer businessId) {
-        //should be transactional
         Business savedBusiness = businessRepository.findOne(businessId);
 
         if (savedBusiness == null) {
             return ResponseEntity.notFound().build();
         }
 
-        List<BusinessTranslation> translations = businessTranslationRepository.findByBusiness(savedBusiness);
-
-        businessTranslationRepository.delete(translations);
         businessRepository.delete(savedBusiness);
 
         return ResponseEntity.noContent().build();
@@ -128,17 +113,19 @@ public class BusinessController {
         BusinessTranslation businessTranslation = BusinessTranslation.builder()
                                                                      .description(translation.getDescription())
                                                                      .valueProposition(translation.getValueProposition())
-                                                                     .business(savedBusiness)
                                                                      .locale(translation.getLocale())
                                                                      .build();
 
-        BusinessTranslation savedTranslation = businessTranslationRepository.save(businessTranslation);
+        //Should be improved
+        boolean languageAdded = savedBusiness.getTranslations().add(businessTranslation);
+        if (!languageAdded) {
+            throw new IllegalStateException("language already exists, update it");
+        }
 
-        URI location = ServletUriComponentsBuilder
-                .fromCurrentRequest().path("/{id}")
-                .buildAndExpand(savedTranslation.getId()).toUri();
+        businessRepository.save(savedBusiness);
 
-        return ResponseEntity.created(location).build();
+
+        return ResponseEntity.ok().build();
     }
 
 }
