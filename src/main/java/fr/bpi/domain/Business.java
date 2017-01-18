@@ -25,6 +25,4 @@ public class Business {
     private Integer id;
     private String domain;
 
-
-
 }

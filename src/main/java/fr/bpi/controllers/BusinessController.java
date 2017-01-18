@@ -69,7 +69,7 @@ public class BusinessController {
         }
 
         BusinessTranslation defaultTranslation = BusinessTranslation.builder()
-                                                                    .business(savedBusiness)
+                                                                    .businessId(savedBusiness.getId())
                                                                     .isDefault(true)
                                                                     .locale(businessModel.getLocale())
                                                                     .description(businessModel.getDescription())
@@ -110,7 +110,7 @@ public class BusinessController {
             return ResponseEntity.notFound().build();
         }
 
-        List<BusinessTranslation> translations = businessTranslationRepository.findByBusiness(savedBusiness);
+        List<BusinessTranslation> translations = businessTranslationRepository.findByBusinessId(savedBusiness.getId());
 
         businessTranslationRepository.delete(translations);
         businessRepository.delete(savedBusiness);
@@ -128,7 +128,7 @@ public class BusinessController {
         BusinessTranslation businessTranslation = BusinessTranslation.builder()
                                                                      .description(translation.getDescription())
                                                                      .valueProposition(translation.getValueProposition())
-                                                                     .business(savedBusiness)
+                                                                     .businessId(savedBusiness.getId())
                                                                      .locale(translation.getLocale())
                                                                      .build();
 

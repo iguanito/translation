@@ -20,10 +20,10 @@ public class BusinessDefaultingTranslator {
     public BusinessModel translate(Business business, String language) {
         BusinessTranslation translation = null;
         if (language != null) {
-            translation = businessTranslationRepository.findByBusinessAndLocale(business, new Locale(language));
+            translation = businessTranslationRepository.findByBusinessIdAndLocale(business.getId(), new Locale(language));
         }
         if (translation == null) {
-            translation = businessTranslationRepository.findByBusinessAndIsDefault(business, true);
+            translation = businessTranslationRepository.findByBusinessIdAndIsDefault(business.getId(), true);
         }
         if (translation == null) {
             throw new IllegalStateException("No default translation found");
